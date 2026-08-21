@@ -14,7 +14,13 @@ const upload = async (file, key, mimetype) => {
   const command = new PutObjectCommand(params);
   await s3.send(command);
 
-  return `https://${bucket}.s3.${region}.amazonaws.com/${encodeURIComponent(key)}`;
+  // LOCAL: when IMAGE_READ_BASE is set, return a read URL served through the shared gateway
+  // (<base>/<bucket>/<key>, e.g. http://localhost:8088/s3/...), which the browser can resolve.
+  // Unset in production, so the returned URL stays the public AWS virtual-host S3 URL.
+  const readBase = process.env.IMAGE_READ_BASE;
+  return readBase
+    ? `${readBase}/${bucket}/${encodeURIComponent(key)}`
+    : `https://${bucket}.s3.${region}.amazonaws.com/${encodeURIComponent(key)}`;
 };
 
 module.exports = {

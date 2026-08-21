@@ -59,7 +59,11 @@ exports.apiKeyHandler = exports.handlerWrapper(async (req, res, next) => {
 });
 
 exports.verifyJWTHandler = exports.handlerWrapper(async (req, res, next) => {
-  const result = JWTService.verify(req.headers.authorization);
+  // LOCAL: when KEYCLOAK_REALM_URL is set, accept a shared-realm Keycloak token (sub -> wallet_id);
+  // otherwise the default greenstand-signed RS256 path. req.wallet_id is set the same way for both.
+  const result = process.env.KEYCLOAK_REALM_URL
+    ? await JWTService.verifyKeycloak(req.headers.authorization)
+    : JWTService.verify(req.headers.authorization);
   req.wallet_id = result.id;
   next();
 });
