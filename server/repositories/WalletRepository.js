@@ -14,12 +14,20 @@ class WalletRepository extends BaseRepository {
   }
 
   async getByName(wallet) {
+    // Wallet names may contain spaces: the create path allows them
+    // (`wallet_name: Joi.string().trim().required()`), and accept/decline look the
+    // originating/destination wallet up by that same display name for event logging. So guard only
+    // against an empty name here; the old `/^\S+$/` rejected valid names like "Masaka Co-op" and made
+    // accept/decline fail with 422 (rolling the transfer back).
     Joi.assert(
       wallet,
       Joi.string()
-        .pattern(/^\S+$/)
+        .trim()
+        .min(1)
         .messages({
-          'string.pattern.base': `Invalid wallet name: "${wallet}"`,
+          'string.base': `Invalid wallet name: "${wallet}"`,
+          'string.empty': `Invalid wallet name: "${wallet}"`,
+          'string.min': `Invalid wallet name: "${wallet}"`,
         }),
     );
 
